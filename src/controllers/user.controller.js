@@ -4,23 +4,33 @@ const UserModel      	= require("../models/user.model");
 
 class UserController extends Controller {
 
-    constructor(req, res) {
-        super(req, res);
+    constructor() {
+        super();
     }
     
-    index() {
+    index(req, res) {
 		this.page_params.PAGE.title = "Login";
         this.page_params.PAGE.view = "index";
 
         /* Custom javascript for index page */
-		// this.page_params.PAGE.assets.javascripts.push({ file: `/public/javascripts/custom/user/${this.page_params.PAGE.view}_be.js` });
+		this.page_params.PAGE.assets.javascripts.push({ file: `/public/javascripts/custom/user/${this.page_params.PAGE.view}_be.js` });
 
-        this.res.render("layouts/user.layout.ejs", this.page_params);
+        res.render("layouts/user.layout.ejs", this.page_params);
     }
 
-    async login() {
+    success(req, res) {
+        this.page_params.PAGE.title = "Success";
+        this.page_params.PAGE.view = "success";
+
+        this.page_params.DATA.user       = req.session.user;
+        this.page_params.DATA.user_id    = req.session.user_id;
+
+        res.render("layouts/user.layout.ejs", this.page_params);
+    }
+
+    async login(req, res) {
         let formHelper      = new FormHelper();
-        let params          = formHelper.checkLoginParams({require: "email, password"}, this.req);
+        let params          = formHelper.checkLoginParams({require: "email, password"}, req);
         let result          = {};
     
         if(params.status){
@@ -31,28 +41,28 @@ class UserController extends Controller {
             if(user.status) {
                 if(params.filtered_fields.password == user.result.password) {
                     // login
-                    result.redirect_url = 'http://localhost:3001' + '/wall';
+                    result.redirect_url = 'http://localhost:3001' + '/success';
                     result.status       = user.status;
-                    this.req.session.user    = user.result.first_name;
-                    this.req.session.user_id = user.result.id;
+                    req.session.user    = user.result.name;
+                    req.session.user_id = user.result.id;
                     
-                    this.res.json(result);
+                    res.json(result);
                 } else {
-                    this.res.json({
+                    res.json({
                         status: false,
                         message: "Invalid email or password combination.",
                         err: user.message
                     });    
                 }
             } else {
-                this.res.json({
+                res.json({
                     status: false,
                     message: "Invalid email or password combination.",
                     err: user.message
                 });
             }
         } else {
-            this.res.json({
+            res.json({
                 status: false,
                 message: "A required field is missing",
                 err: params.missing_fields
